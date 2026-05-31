@@ -1,0 +1,698 @@
+import React, { useMemo, useState } from "react";
+
+const ASSETS = {
+  logo: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428219/logo_w7bj2b.png",
+  hero: "https://res.cloudinary.com/dnwij22qh/image/upload/v1777428382/hero_ecrgdg.png",
+  about: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428376/About_Jawbone_img_xcfbrl.png",
+  category1: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428255/constrution_category_rq014n.jpg",
+  category2: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428393/ladingscaping_category_w94knj.jpg",
+  category3: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428353/Wood_category_b5jdo1.jpg",
+  category4: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428345/tools_category_e0qxnq.jpg",
+  delivery1: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428369/Delivery_Process_step1_lont6h.png",
+  delivery2: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428358/Delivery_Process_step2_xv2zbs.png",
+  delivery3: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428387/Delivery_Process_step3_tggkan.png",
+  serving: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777428364/Serving_Projects_img_pibwcl.png",
+  emptyCart: "https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777429226/empty_cart_img_fsairz.png",
+};
+
+const APP_PAGE_BG = "bg-[radial-gradient(circle_at_top_left,rgba(220,179,117,0.22),transparent_34%),linear-gradient(180deg,#f7f4ed_0%,#f3f1ed_52%,#ebe7de_100%)]";
+const APP_PAGE_PADDING = "px-5 py-14 md:px-10 md:py-16 lg:px-[100px]";
+const APP_CONTAINER = "mx-auto max-w-[1240px]";
+const SCREENS = ["home", "shop", "product", "cart", "checkout", "favorites", "account", "orders", "contractor", "admin", "contact", "privacy", "terms"];
+
+const categories = [
+  { name: "Construction Materials", img: ASSETS.category1 },
+  { name: "Agricultural & Landscaping", img: ASSETS.category2 },
+  { name: "Wood & Lumber", img: ASSETS.category3 },
+  { name: "Tools & Equipment", img: ASSETS.category4 },
+];
+
+const products = [
+  { id: 1, title: "Concrete & Surface Panel", category: "Construction Materials", retailPrice: 189, contractorPrice: 159, storePrice: 145, weight: 4.2, image: ASSETS.category1, description: "Premium construction surface panel for commercial and residential projects.", inStock: true },
+  { id: 2, title: "Agricultural Supply Kit", category: "Agricultural & Landscaping", retailPrice: 1099, contractorPrice: 984, storePrice: 876, weight: 2.1, image: ASSETS.category2, description: "Reliable supply package for agricultural and landscaping work.", inStock: false },
+  { id: 3, title: "Wood & Lumber Kit", category: "Wood & Lumber", retailPrice: 2450, contractorPrice: 2100, storePrice: 1950, weight: 7.5, image: ASSETS.category3, description: "Ready-to-supply lumber package for contractor projects.", inStock: true },
+  { id: 4, title: "Tools Starter Bundle", category: "Tools & Equipment", retailPrice: 1280, contractorPrice: 1120, storePrice: 1040, weight: 3.4, image: ASSETS.category4, description: "Essential tools and accessories bundle for job-site use.", inStock: true },
+];
+
+const mockOrders = [
+  { id: "JWB-1048", date: "May 18, 2026", status: "Delivered", total: 2734 },
+  { id: "JWB-1049", date: "May 22, 2026", status: "In Transit", total: 1280 },
+  { id: "JWB-1050", date: "May 25, 2026", status: "Processing", total: 1099 },
+];
+
+const referredOrders = [
+  { id: "REF-2201", customer: "Michael R.", date: "May 12, 2026", orderTotal: 1280, reward: 64, status: "Paid" },
+  { id: "REF-2202", customer: "Sarah K.", date: "May 16, 2026", orderTotal: 2450, reward: 123, status: "Paid" },
+  { id: "REF-2203", customer: "BuildPro LLC", date: "May 21, 2026", orderTotal: 2110, reward: 106, status: "Pending" },
+];
+
+const adminUsers = [
+  { id: "USR-1001", name: "Sarah Customer", type: "Consumer", email: "sarah@example.com", status: "Active", orders: 8, spend: 4830 },
+  { id: "CON-2001", name: "Oren Contractor", type: "Contractor", email: "oren@buildpro.com", status: "Approved", orders: 21, spend: 18420 },
+  { id: "CON-2002", name: "BuildPro LLC", type: "Contractor", email: "admin@buildpro.com", status: "Pending", orders: 0, spend: 0 },
+];
+
+const adminInvoices = [
+  { id: "INV-5001", order: "JWB-1048", customer: "Sarah Customer", amount: 2734, status: "Paid", due: "May 25, 2026" },
+  { id: "INV-5002", order: "JWB-1049", customer: "Oren Contractor", amount: 1280, status: "Open", due: "May 29, 2026" },
+  { id: "INV-5003", order: "JWB-1050", customer: "BuildPro LLC", amount: 1099, status: "Draft", due: "Jun 02, 2026" },
+];
+
+const formatUSD = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+const getSubtotal = (cart) => cart.reduce((sum, item) => sum + item.retailPrice * item.qty, 0);
+const getWeight = (cart) => cart.reduce((sum, item) => sum + item.weight * item.qty, 0);
+const getShipping = (cart) => (cart.length ? Math.ceil(getWeight(cart)) * 12 : 0);
+const getCouponDiscount = (subtotal, couponCode) => {
+  const code = couponCode.trim().toUpperCase();
+  if (code === "JAWBONE10") return Math.round(subtotal * 0.1);
+  if (code.startsWith("CONTRACTOR")) return Math.round(subtotal * 0.15);
+  return 0;
+};
+const getStoreScoreEarnings = (purchaseAmount) => Math.round(purchaseAmount * 0.05);
+const getStoreCreditToApply = (availableCredit, subtotalAfterDiscount) => Math.min(availableCredit, subtotalAfterDiscount);
+const getPreviousScreen = (history, fallback = "shop") => history[history.length - 1] || fallback;
+const createNavigation = (currentScreen, setScreen, setHistory) => ({
+  goToScreen(nextScreen) {
+    if (nextScreen === currentScreen) return;
+    setHistory((items) => [...items, currentScreen].slice(-12));
+    setScreen(nextScreen);
+  },
+  goBack(fallback = "shop") {
+    setHistory((items) => {
+      setScreen(getPreviousScreen(items, fallback));
+      return items.slice(0, -1);
+    });
+  },
+});
+
+console.assert(formatUSD(1048) === "$1,048.00", "USD formatter should include commas and cents");
+console.assert(getSubtotal([{ retailPrice: 10, qty: 2 }]) === 20, "Subtotal should multiply price by qty");
+console.assert(getShipping([{ weight: 1.2, qty: 1 }]) === 24, "Shipping should round weight up and multiply by 12");
+console.assert(getShipping([]) === 0, "Empty cart shipping should be zero");
+console.assert(getCouponDiscount(100, "JAWBONE10") === 10, "JAWBONE10 should apply 10% discount");
+console.assert(getCouponDiscount(100, "CONTRACTOR-OREN") === 15, "Contractor coupons should apply 15% discount");
+console.assert(getCouponDiscount(100, "BAD") === 0, "Invalid coupons should not apply a discount");
+console.assert(getStoreScoreEarnings(1000) === 50, "Store Score should earn 5% of referred purchases");
+console.assert(getStoreCreditToApply(80, 120) === 80, "Store credit cannot exceed available credit");
+console.assert(getStoreCreditToApply(200, 120) === 120, "Store credit cannot exceed subtotal after discount");
+console.assert(typeof createNavigation === "function", "Navigation helper should be available for product back behavior");
+console.assert(products.some((product) => product.inStock === false), "Catalog should include at least one out-of-stock product state");
+console.assert(products.filter((product) => product.inStock !== false).length === 3, "In-stock availability filter should show three demo products");
+console.assert(SCREENS.includes("privacy") && SCREENS.includes("terms"), "Legal pages should include privacy and terms routes");
+console.assert(APP_PAGE_BG.includes("radial-gradient"), "App pages should use subtle gradient background");
+console.assert(mockOrders.length > 0, "Account orders tab should have real order data to render");
+console.assert(referredOrders.length > 0, "Contractor account tab should have real referred order data to render");
+console.assert(adminUsers.some((user) => user.type === "Contractor"), "Admin panel should include contractor user management data");
+console.assert(adminInvoices.length > 0, "Admin panel should include invoice management data");
+
+function Icon({ name, size = 20 }) {
+  const paths = {
+    search: "M21 21l-4.35-4.35 M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z",
+    cart: "M6 6h15l-2 9H8L6 6Z M6 6 5 3H2 M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z M18 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+    heart: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8Z",
+    plus: "M12 5v14 M5 12h14",
+    minus: "M5 12h14",
+    x: "M18 6 6 18 M6 6l12 12",
+    truck: "M3 7h11v10H3V7Z M14 10h4l3 3v4h-7v-7Z M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+    share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7 M16 6l-4-4-4 4 M12 2v14",
+    edit: "M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z",
+    arrowLeft: "M19 12H5 M12 19l-7-7 7-7",
+    zoomIn: "M21 21l-4.35-4.35 M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z M11 8v6 M8 11h6",
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.search} /></svg>;
+}
+
+function Button({ children, onClick, variant = "primary", className = "", type = "button", disabled = false }) {
+  const base = "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition";
+  const style = variant === "gold" ? "bg-[#dcb375] text-[#60371b] hover:bg-[#caa15e]" : variant === "outline" ? "border border-[#60371b] text-[#60371b] hover:bg-[#f7f0dc]" : "bg-[#60371b] text-white hover:bg-[#4d2c16]";
+  return <button type={type} disabled={disabled} onClick={onClick} className={`${base} ${style} ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}>{children}</button>;
+}
+
+function PreviewImage({ src, alt, className = "" }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <div className={`flex items-center justify-center bg-gradient-to-br from-[#60371b] via-[#9d704a] to-[#dcb375] px-4 text-center text-sm font-bold uppercase tracking-[0.18em] text-white ${className}`}>{alt}</div>;
+  return <img src={src} alt={alt} className={className} onError={() => setFailed(true)} />;
+}
+
+function FormField({ label, type = "text" }) {
+  return <label className="mb-5 block text-[#60371b]"><span className="mb-2 block font-semibold">{label}</span><input type={type} className="w-full rounded border border-[#60371b33] bg-[#f3f1ed] px-4 py-3 outline-none" /></label>;
+}
+
+function TextAreaField({ label }) {
+  return <label className="mb-5 block text-[#60371b]"><span className="mb-2 block font-semibold">{label}</span><textarea rows={5} className="w-full rounded border border-[#60371b33] bg-[#f3f1ed] px-4 py-3 outline-none" placeholder="How can we help?" /></label>;
+}
+
+function RegisterSection({ title, description, children }) {
+  return <div className="rounded-2xl bg-[#f3f1ed] p-5"><h3 className="text-xl font-bold text-[#60371b]">{title}</h3>{description ? <p className="mt-2 text-sm leading-6 text-gray-700">{description}</p> : null}<div className="mt-4 grid gap-4 md:grid-cols-2">{children}</div></div>;
+}
+
+function LegalAgreementText({ setScreen }) {
+  return <>{"I agree to the "}<button type="button" onClick={() => setScreen("privacy")} className="font-semibold underline">Privacy Policy</button>{" and "}<button type="button" onClick={() => setScreen("terms")} className="font-semibold underline">Terms & Conditions</button></>;
+}
+
+function AgreementRow({ children }) {
+  return <div className="flex items-start gap-3 text-sm text-[#60371b]"><input type="checkbox" className="mt-1 h-4 w-4" /><span>{children}</span></div>;
+}
+
+function Header({ screen, setScreen, cartCount, favoritesCount, isLoggedIn, userType, logout }) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const navItems = [{ id: "home", label: "Home" }, { id: "shop", label: "Shop" }, { id: "contractor", label: "Contractor" }, { id: "contact", label: "FAQ" }];
+  return <header className="sticky top-0 z-50 bg-white shadow-sm"><div className="mx-auto flex min-h-[70px] max-w-[1440px] items-center justify-between gap-4 px-4 py-3 md:px-8 lg:px-[80px]"><button onClick={() => setScreen("home")} className="flex items-center gap-3 text-left"><PreviewImage src={ASSETS.logo} alt="Jawbone logo" className="h-11 w-11 rounded-full object-contain" /><span className="font-serif text-sm font-bold tracking-[0.16em] text-[#60371b] md:text-xl">JAWBONE PRODUCT</span></button><nav className="hidden items-center gap-6 text-sm text-[#60371b] md:flex">{navItems.map((item) => <button key={item.id} onClick={() => setScreen(item.id)} className={screen === item.id ? "font-bold underline" : ""}>{item.label}</button>)}</nav><div className="flex flex-row-reverse items-center gap-3">{!isLoggedIn ? <Button variant="outline" onClick={() => setScreen("account")} className="px-4 py-2">Login / Register</Button> : <div className="relative"><button onClick={() => setProfileOpen((open) => !open)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#60371b] bg-[#f3f1ed] text-sm font-bold text-[#60371b]" aria-label="Profile menu">{userType === "contractor" ? "CO" : "CU"}</button>{profileOpen ? <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl border border-[#60371b22] bg-white text-left shadow-xl"><button onClick={() => { setScreen("account"); setProfileOpen(false); }} className="block w-full px-4 py-3 text-left text-sm text-[#60371b] hover:bg-[#f3f1ed]">Profile</button><button onClick={() => { setScreen("orders"); setProfileOpen(false); }} className="block w-full px-4 py-3 text-left text-sm text-[#60371b] hover:bg-[#f3f1ed]">Orders</button><button onClick={() => { logout(); setProfileOpen(false); }} className="block w-full px-4 py-3 text-left text-sm font-semibold text-red-700 hover:bg-red-50">Logout</button></div> : null}</div>}<button onClick={() => setScreen("cart")} className="relative rounded-full bg-[#60371b] p-2 text-white" aria-label="Cart"><Icon name="cart" />{cartCount > 0 ? <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dcb375] px-1 text-xs font-bold text-[#60371b]">{cartCount}</span> : null}</button><button onClick={() => setScreen("favorites")} className="relative rounded-full bg-[#60371b] p-2 text-white" aria-label="Favorites"><Icon name="heart" />{favoritesCount > 0 ? <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dcb375] px-1 text-xs font-bold text-[#60371b]">{favoritesCount}</span> : null}</button></div></div></header>;
+}
+
+function PreviewToolbar({ screen, setScreen, login, logout, isLoggedIn, userType }) {
+  const labels = { home: "Landing", shop: "Shop", product: "Product", cart: "Cart", checkout: "Checkout", favorites: "Favorites", account: "Account", orders: "Orders", contractor: "Contractor", admin: "Admin", contact: "FAQ / Contact", privacy: "Privacy", terms: "Terms" };
+  return <div className="sticky top-0 z-[80] border-b border-[#60371b22] bg-[#f3f1ed]/95 px-3 py-3 backdrop-blur md:px-6"><div className="mx-auto flex max-w-[1440px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><div className="text-xs font-bold uppercase tracking-[0.22em] text-[#dcb375]">Canvas preview controls</div><div className="text-sm font-semibold text-[#60371b]">Switch screens here to see the full design.</div></div><div className="flex max-w-full gap-2 overflow-x-auto pb-1">{SCREENS.map((id) => <button key={id} onClick={() => setScreen(id)} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition ${screen === id ? "border-[#60371b] bg-[#60371b] text-white" : "border-[#60371b33] bg-white text-[#60371b] hover:bg-[#fff4c8]"}`}>{labels[id]}</button>)}</div><div className="flex shrink-0 gap-2">{isLoggedIn ? <button onClick={logout} className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700">Logout demo</button> : <><button onClick={() => login("consumer", screen === "checkout" ? "checkout" : "account")} className="rounded-full bg-white px-4 py-2 text-xs font-bold text-[#60371b] shadow-sm">Login demo</button><button onClick={() => login("contractor", "contractor", "approved")} className="rounded-full bg-[#dcb375] px-4 py-2 text-xs font-bold text-[#60371b] shadow-sm">Contractor demo</button></>}{isLoggedIn ? <span className="rounded-full bg-white px-4 py-2 text-xs font-bold text-[#60371b] shadow-sm">{userType === "contractor" ? "Contractor" : "Consumer"}</span> : null}</div></div></div>;
+}
+
+function Home({ setScreen }) {
+  const deliverySteps = [
+    { image: ASSETS.delivery1, alt: "Warehouse & Preparation", title: "Warehouse & Preparation", description: "Everything begins in our warehouse. Here, we receive, organize, and carefully prepare each order, ensuring materials are properly packed and ready for transport. Our team works with precision so every load leaves in perfect condition." },
+    { image: ASSETS.delivery2, alt: "Transportation in Motion", title: "Transportation in Motion", description: "Once loaded, the materials begin their journey. Our trucks hit the road following efficient and well-planned logistics, ensuring safe and on-time deliveries. Each shipment is monitored to make sure it arrives exactly where it's needed." },
+    { image: ASSETS.delivery3, alt: "Delivery to the Customer", title: "Delivery to the Customer", description: "The process ends at the destination. Materials are unloaded directly at the customer's site or property with the same care used during preparation. This ensures every delivery is completed reliably and without complications." },
+  ];
+  return <main><section className="relative overflow-hidden px-5 py-20 md:px-10 lg:px-[100px]"><PreviewImage src={ASSETS.hero} alt="Jawbone hero image" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-black/20" /><div className="relative mx-auto max-w-[1240px]"><p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Wholesale Distribution</p><h1 className="font-serif text-5xl font-bold leading-tight text-white md:text-7xl">Wholesale Distribution & Delivery of Materials and Products</h1><p className="mt-6 max-w-xl text-lg leading-8 text-white/90">Stock supply and distribution for construction, agricultural, and general building materials.</p><div className="mt-8 flex flex-wrap gap-3"><Button onClick={() => setScreen("shop")}>Shop Products</Button><Button variant="outline" onClick={() => setScreen("account")} className="border-white bg-white/10 text-white">Login / Register</Button></div></div></section><section className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className="mx-auto max-w-[1240px] text-center"><h2 className="text-3xl font-semibold text-[#60371b] md:text-4xl">Find the products you need</h2><div className="mt-10 grid gap-5 md:grid-cols-4">{categories.map((cat) => <button key={cat.name} onClick={() => setScreen("shop")} className="group relative h-[230px] overflow-hidden rounded-lg text-white"><PreviewImage src={cat.img} alt={cat.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/5" /><div className="absolute bottom-5 left-4 right-4 text-center text-base font-bold uppercase tracking-wide">{cat.name}</div></button>)}</div></div></section><section className="min-h-[522px] bg-[linear-gradient(92deg,rgb(58_33_17)_40%,rgb(162_129_73)_66%)] px-5 py-16 md:px-10 lg:px-[100px]"><div className="mx-auto grid max-w-[1240px] gap-10 lg:grid-cols-2"><div className="flex flex-col justify-center"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">About</p><h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">About Jawbone Products</h2><p className="mt-5 text-lg leading-8 text-white/90">Jawbone Products is a wholesale distributor and stock dealer based in Chatsworth, Los Angeles. We supply a wide range of construction materials, agricultural products, and general building supplies to contractors, businesses, and the public. Our operation is focused on stock availability, volume supply, and reliable distribution.</p><p className="mt-4 text-lg font-semibold uppercase leading-8 tracking-wide text-white">BUILT TO SUPPORT COMMERCIAL DEMAND AND ONGOING PROJECTS</p></div><div className="relative h-[320px] overflow-hidden rounded-2xl md:h-full"><PreviewImage src={ASSETS.about} alt="About Jawbone Products" className="h-full w-full object-cover" /></div></div></section><section className="flex w-full flex-col items-center justify-center gap-8 px-6 py-12 md:gap-10 md:px-12 md:py-14 lg:gap-[49px] lg:px-16 lg:py-16"><h2 className="text-center text-2xl font-semibold text-[#60371b] md:text-3xl lg:text-4xl">Our Delivery Process</h2><div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-8 md:grid-cols-3 md:gap-6 lg:gap-10">{deliverySteps.map((step) => <article key={step.title} className="flex w-full flex-col items-start gap-4 bg-transparent md:gap-[17px]"><PreviewImage src={step.image} alt={step.alt} className="h-[200px] w-full rounded-lg object-cover md:h-[223px]" /><div className="flex w-full flex-col items-start gap-2"><h3 className="text-xl font-bold text-gray-900 md:text-2xl">{step.title}</h3><p className="text-base leading-[1.4] text-gray-900 md:text-lg md:leading-[27px] lg:text-xl">{step.description}</p></div></article>)}</div></section><section className="grid min-h-[420px] bg-[#f3f1ed] lg:grid-cols-[610px_1fr]"><div className="flex flex-col justify-center px-6 py-14 md:px-12 lg:px-[99px]"><h2 className="text-3xl font-semibold text-[#60371b] md:text-4xl">Serving Projects Across the United States</h2><p className="mt-5 text-lg leading-8 text-gray-900">What started with deliveries in Florida, Miami, and Houston, Texas, has grown into a nationwide service network.</p></div><div className="relative min-h-[300px] overflow-hidden"><PreviewImage src={ASSETS.serving} alt="Serving projects across" className="h-full w-full object-contain object-bottom" /></div></section></main>;
+}
+
+function FilterCheck({ checked, onClick, label }) {
+  return <button onClick={onClick} className="flex w-full items-center gap-3 text-left text-sm"><span className={`flex h-5 w-5 items-center justify-center rounded border ${checked ? "border-[#60371b] bg-[#60371b] text-white" : "border-gray-400 bg-white"}`}>{checked ? "✓" : ""}</span><span>{label}</span></button>;
+}
+
+function ProductCard({ product, addToCart, toggleFavorite, isFavorite, openProduct }) {
+  const out = product.inStock === false;
+  return <article className={`overflow-hidden rounded-3xl p-4 shadow-sm transition ${out ? "bg-[#ece9e2] opacity-75 grayscale" : "bg-[#fffaeb] hover:-translate-y-1 hover:shadow-md"}`}><div className="relative flex h-52 items-center justify-center overflow-hidden rounded-2xl bg-[#f3f1ed]"><PreviewImage src={product.image} alt={product.title} className="h-full w-full object-cover" />{out ? <div className="absolute inset-0 flex items-center justify-center bg-black/40"><span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#60371b]">Out of stock</span></div> : null}<span className="absolute right-3 top-3 rounded-full bg-[#fff4c8] px-3 py-1 text-xs font-semibold text-[#60371b]">{product.weight}kg</span><button onClick={() => toggleFavorite(product)} className={`absolute left-3 top-3 rounded-full p-2 shadow-sm ${isFavorite(product.id) ? "bg-[#60371b] text-white" : "bg-white text-[#60371b]"}`} aria-label="Add to favorites"><Icon name="heart" size={17} /></button></div><div className="pt-5 text-center"><h3 className="text-base font-semibold text-[#2b2b35]">{product.title}</h3><span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${out ? "bg-gray-200 text-gray-600" : "bg-[#f8dddd] text-[#60371b]"}`}>{out ? "Currently unavailable" : product.category}</span><div className="mt-3 text-3xl font-bold text-[#60371b]">{formatUSD(product.retailPrice)}</div>{out ? <button className="mt-4 flex w-full items-center justify-center rounded-full border border-[#60371b33] bg-white py-3 text-sm font-semibold text-[#60371b]">Notify me when available</button> : <button onClick={() => addToCart(product)} className="mt-4 flex w-full items-center justify-between rounded-full border border-[#60371b] bg-white py-1 pl-5 pr-1 text-[#60371b]"><span className="text-sm font-semibold">Add to Cart</span><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#60371b] text-white"><Icon name="cart" size={16} /></span></button>}<button onClick={() => openProduct(product)} className="mt-3 text-sm font-semibold text-[#60371b] underline">View details</button></div></article>;
+}
+
+function Shop({ setSelected, addToCart, toggleFavorite, isFavorite, goToScreen }) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const [sort, setSort] = useState("featured");
+  const [availability, setAvailability] = useState("in");
+  const sortLabels = { featured: "Best Selling", low: "Price: Low to High", high: "Price: High to Low" };
+  const visible = useMemo(() => {
+    let list = products.filter((p) => (category === "All" || p.category === category) && p.title.toLowerCase().includes(query.toLowerCase()));
+    if (availability === "in") list = list.filter((p) => p.inStock !== false);
+    if (availability === "out") list = list.filter((p) => p.inStock === false);
+    if (sort === "low") list = [...list].sort((a, b) => a.retailPrice - b.retailPrice);
+    if (sort === "high") list = [...list].sort((a, b) => b.retailPrice - a.retailPrice);
+    return list;
+  }, [query, category, sort, availability]);
+  const cycleSort = () => setSort((current) => (current === "featured" ? "low" : current === "low" ? "high" : "featured"));
+  const openProduct = (product) => { setSelected(product); goToScreen("product"); };
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><div className="rounded-3xl bg-[#60371b] p-8 text-white md:p-12"><p className="text-sm uppercase tracking-[0.25em] text-[#dcb375]">E-commerce catalog</p><h1 className="mt-3 text-5xl font-semibold">Shop Products</h1><p className="mt-4 max-w-2xl text-[#f7f0dc]">Search, filter, sort and add products to cart.</p></div><div className="mt-10 grid gap-6 lg:grid-cols-[260px_1fr]"><aside className="space-y-5"><div className="rounded-3xl bg-[#fffaeb] p-5 shadow-sm"><p className="text-lg font-bold text-[#60371b]">Search</p><div className="mt-4 flex items-center gap-3 rounded-2xl border border-[#60371b22] bg-[#f3f1ed] px-4 py-3 text-[#60371b]"><Icon name="search" size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products" className="w-full bg-transparent text-sm outline-none placeholder:text-[#60371b88]" /></div></div><div className="rounded-3xl bg-[#fffaeb] p-5 shadow-sm"><h3 className="text-xl font-bold text-[#2b2b35]">Availability</h3><div className="mt-4 space-y-3 text-[#2b2b35]"><FilterCheck checked={availability === "in"} onClick={() => setAvailability("in")} label={`In Stock (${products.filter((p) => p.inStock !== false).length})`} /><FilterCheck checked={availability === "out"} onClick={() => setAvailability("out")} label={`Out of stock (${products.filter((p) => p.inStock === false).length})`} /></div><div className="my-6 h-px bg-gray-200" /><h3 className="text-xl font-bold text-[#2b2b35]">Product Category</h3><div className="mt-4 space-y-3 text-[#2b2b35]"><FilterCheck checked={category === "All"} onClick={() => setCategory("All")} label="All Products" />{categories.map((cat) => <FilterCheck key={cat.name} checked={category === cat.name} onClick={() => setCategory(cat.name)} label={cat.name} />)}</div></div></aside><section><div className="mb-5 flex items-center justify-between gap-4"><div><p className="text-sm text-gray-500">Showing {visible.length} products</p><h2 className="text-2xl font-bold text-[#60371b]">Available Products</h2></div><button onClick={cycleSort} className="flex min-w-[170px] items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#2b2b35] shadow-sm"><span>{sortLabels[sort]}</span><span className="text-lg leading-none">↓</span></button></div><div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{visible.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} toggleFavorite={toggleFavorite} isFavorite={isFavorite} openProduct={openProduct} />)}</div></section></div></div></main>;
+}
+
+function PriceBox({ label, value }) {
+  return <div className="rounded-2xl bg-[#fffaeb] p-4 shadow-sm"><div className="text-xs text-gray-500">{label}</div><div className="text-2xl font-bold text-[#60371b]">{formatUSD(value)}</div></div>;
+}
+
+function ProductPage({ product, addToCart, goBack, toggleFavorite, isFavorite }) {
+  const [qty, setQty] = useState(1);
+  const [activeImage, setActiveImage] = useState(product.image);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [heartPop, setHeartPop] = useState(false);
+  const galleryImages = useMemo(() => [product.image, ...products.filter((item) => item.id !== product.id).slice(0, 3).map((item) => item.image)], [product]);
+  const favoriteActive = isFavorite(product.id);
+  const out = product.inStock === false;
+  const handleFavorite = () => { toggleFavorite(product); setHeartPop(true); window.setTimeout(() => setHeartPop(false), 520); };
+  const handleAddToCart = () => { if (!out) addToCart(product, qty); };
+  return <main className={`${APP_PAGE_BG} px-5 pb-28 pt-10 md:px-10 md:pb-16 md:pt-14 lg:px-[100px]`}><div className="mx-auto grid max-w-[1240px] gap-10 lg:grid-cols-2"><section className="space-y-4"><div className="relative overflow-hidden rounded-3xl bg-white shadow-sm">{out ? <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40"><span className="rounded-full bg-white px-5 py-2 text-sm font-bold text-[#60371b]">Out of stock</span></div> : null}<div className="absolute left-4 right-4 top-4 z-20 flex items-center justify-between"><button onClick={() => goBack("shop")} className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#60371b] shadow-lg" aria-label="Back to shop"><Icon name="arrowLeft" size={19} /></button><button onClick={handleFavorite} className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-lg ${favoriteActive ? "bg-[#60371b] text-white" : "bg-white/95 text-[#60371b]"}`} aria-label="Add to favorites"><span className={`absolute inset-0 rounded-full bg-[#dcb375]/40 ${heartPop ? "animate-ping" : "hidden"}`} /><Icon name="heart" size={19} /></button></div><button onClick={() => setZoomOpen(true)} className="block h-[560px] w-full cursor-zoom-in"><PreviewImage src={activeImage} alt={product.title} className="h-full w-full object-cover" /></button></div><div className="grid grid-cols-4 gap-3">{galleryImages.map((image, index) => <button key={`${image}-${index}`} onClick={() => setActiveImage(image)} className={`h-24 overflow-hidden rounded-2xl border-2 bg-white transition ${activeImage === image ? "border-[#60371b]" : "border-transparent hover:border-[#dcb375]"}`} aria-label={`View product image ${index + 1}`}><PreviewImage src={image} alt={`${product.title} gallery ${index + 1}`} className="h-full w-full object-cover" /></button>)}</div></section><section className="flex flex-col justify-center"><div className="mb-4 w-fit rounded-full bg-[#dcb375] px-4 py-2 text-sm font-bold text-[#60371b]">{product.category}</div><h1 className="text-5xl font-semibold text-[#60371b]">{product.title}</h1>{out ? <div className="mt-4 rounded-xl bg-red-100 px-4 py-3 text-sm font-semibold text-red-700">This product is currently out of stock</div> : null}<p className="mt-5 text-lg leading-8 text-gray-800">{product.description}</p><div className="mt-8 grid grid-cols-3 gap-3"><PriceBox label="Retail" value={product.retailPrice} /><PriceBox label="Contractor" value={product.contractorPrice} /><PriceBox label="Store" value={product.storePrice} /></div><div className="mt-6 rounded-2xl bg-[#fffaeb] p-5 text-[#60371b] shadow-sm"><div className="flex justify-between border-b border-[#60371b22] pb-3"><span>Weight</span><b>{product.weight} kg</b></div><div className="flex justify-between pt-3"><span>Shipping</span><b>Calculated by weight</b></div></div><div className="mt-6 flex flex-wrap items-center gap-4">{!out ? <div className="flex items-center rounded-xl border border-[#60371b] bg-white text-[#60371b]"><button onClick={() => setQty(Math.max(1, qty - 1))} className="p-3" aria-label="Decrease quantity"><Icon name="minus" /></button><span className="w-12 text-center font-bold">{qty}</span><button onClick={() => setQty(qty + 1)} className="p-3" aria-label="Increase quantity"><Icon name="plus" /></button></div> : null}{out ? <button className="rounded-xl border border-[#60371b] bg-white px-5 py-3 text-sm font-semibold text-[#60371b]">Notify me when available</button> : <Button onClick={handleAddToCart}>Add to cart</Button>}</div></section></div>{!out ? <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#60371b22] bg-white/95 p-4 shadow-[0_-8px_30px_rgba(96,55,27,0.15)] backdrop-blur md:hidden"><div className="flex items-center gap-3"><div className="min-w-0 flex-1"><div className="truncate text-sm font-bold text-[#60371b]">{product.title}</div><div className="text-xs text-gray-600">{formatUSD(product.retailPrice)} · Qty {qty}</div></div><Button onClick={handleAddToCart} className="shrink-0 px-5">Add to cart</Button></div></div> : null}{zoomOpen ? <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-5" onClick={() => setZoomOpen(false)}><button className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#60371b]" aria-label="Close zoom"><Icon name="x" size={20} /></button><PreviewImage src={activeImage} alt={`${product.title} zoomed`} className="max-h-[88vh] max-w-[94vw] rounded-3xl object-contain shadow-2xl" /></div> : null}</main>;
+}
+
+function EmptyCart({ goShop }) {
+  return <section className="relative min-h-[720px] overflow-hidden bg-white px-5 pb-16 pt-8 text-center md:px-10"><div className="mx-auto flex max-w-[1040px] flex-col items-center"><div className="relative mt-4 w-full"><div className="absolute left-[16%] top-6 h-8 w-24 rounded-full bg-gray-100 opacity-70 blur-sm" /><div className="absolute right-[18%] top-8 h-7 w-20 rounded-full bg-gray-100 opacity-70 blur-sm" /><PreviewImage src={ASSETS.emptyCart} alt="Empty rustic cart" className="mx-auto h-[340px] w-full max-w-[720px] object-contain md:h-[420px] lg:h-[460px]" /></div><div className="-mt-2 max-w-[680px]"><h2 className="text-4xl font-semibold leading-tight text-[#60371b] md:text-5xl">Your cart is empty</h2><p className="mt-3 text-lg leading-8 text-[#2b2b35] md:text-xl">Looks like you haven't added anything to your cart yet.</p><p className="mt-1 text-lg leading-8 text-[#2b2b35] md:text-xl">Explore our products and find what you need.</p><button onClick={goShop} className="mt-6 inline-flex items-center justify-center gap-3 rounded-xl bg-[#60371b] px-10 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#4d2c16]"><Icon name="cart" size={20} /> Go Shop</button></div></div></section>;
+}
+
+function FavoritesPage({ favorites, setScreen, setSelected, addToCart, toggleFavorite, goToScreen }) {
+  const openProduct = (product) => { setSelected(product); goToScreen("product"); };
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><h1 className="text-5xl font-semibold text-[#60371b]">Favorites</h1>{favorites.length === 0 ? <div className="mt-8 rounded-3xl bg-[#fffaeb] p-12 text-center text-[#60371b] shadow-sm"><Icon name="heart" size={44} /><h2 className="mt-4 text-2xl font-semibold">No favorite products yet</h2><p className="mt-2 text-gray-600">Save products you want to revisit later.</p><Button onClick={() => setScreen("shop")} className="mt-6">Go Shop</Button></div> : <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">{favorites.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} toggleFavorite={toggleFavorite} isFavorite={() => true} openProduct={openProduct} />)}</div>}</div></main>;
+}
+
+function LoginRequiredModal({ onClose, onLogin }) {
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-5"><div className="max-w-md overflow-hidden rounded-3xl bg-white text-center shadow-2xl"><div className="p-8"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f3f1ed] text-[#60371b]"><Icon name="heart" size={28} /></div><h2 className="mt-5 text-2xl font-semibold text-[#60371b]">Login required</h2><p className="mt-3 text-gray-600">Please login or create an account to save this product to your favorites.</p><div className="mt-6 flex gap-3"><Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button><Button onClick={onLogin} className="flex-1">Login</Button></div></div></div></div>;
+}
+
+function CartPage({ cart, setCart, setScreen, couponCode, setCouponCode, isLoggedIn, userType, storeCredit = 0, useStoreCredit = false }) {
+  const subtotal = getSubtotal(cart);
+  const shipping = getShipping(cart);
+  const weight = getWeight(cart);
+  const discount = getCouponDiscount(subtotal, couponCode);
+  const subtotalAfterDiscount = Math.max(0, subtotal - discount);
+  const appliedStoreCredit = userType === "contractor" && useStoreCredit ? getStoreCreditToApply(storeCredit, subtotalAfterDiscount) : 0;
+  const total = Math.max(0, subtotalAfterDiscount - appliedStoreCredit) + shipping;
+  const updateQty = (id, delta) => setCart((items) => items.map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item)));
+  const remove = (id) => setCart((items) => items.filter((item) => item.id !== id));
+  if (cart.length === 0) return <main className="bg-white"><EmptyCart goShop={() => setScreen("shop")} /></main>;
+  return <main className={`grid gap-8 ${APP_PAGE_BG} ${APP_PAGE_PADDING} lg:grid-cols-[1fr_380px]`}><div><h1 className="text-5xl font-semibold text-[#60371b]">Cart</h1><div className="mt-8 space-y-4">{cart.map((item) => <div key={item.id} className="flex flex-col gap-4 rounded-2xl bg-[#fffaeb] p-4 shadow-sm md:flex-row md:items-center"><PreviewImage src={item.image} alt={item.title} className="h-24 w-24 rounded-xl object-cover" /><div className="flex-1"><div className="font-bold text-[#60371b]">{item.title}</div><div className="text-sm text-gray-600">{item.weight} kg each</div></div><div className="flex items-center gap-2 text-[#60371b]"><button onClick={() => updateQty(item.id, -1)}><Icon name="minus" /></button><b>{item.qty}</b><button onClick={() => updateQty(item.id, 1)}><Icon name="plus" /></button></div><div className="font-bold text-[#60371b]">{formatUSD(item.retailPrice * item.qty)}</div><button onClick={() => remove(item.id)} className="text-[#60371b]"><Icon name="x" /></button></div>)}</div></div><aside className="h-fit rounded-3xl bg-[#60371b] p-7 text-white"><h2 className="text-2xl font-semibold">Order summary</h2><div className="mt-6 space-y-4 text-[#f7f0dc]"><div className="flex justify-between"><span>Subtotal</span><span>{formatUSD(subtotal)}</span></div><div className="flex justify-between"><span>Total weight</span><span>{weight.toFixed(1)} kg</span></div><div className="flex justify-between"><span>Shipping</span><span>{formatUSD(shipping)}</span></div><div className="flex justify-between"><span>Coupon discount</span><span>-{formatUSD(discount)}</span></div>{userType === "contractor" ? <div className="flex justify-between"><span>Store Score credit</span><span>-{formatUSD(appliedStoreCredit)}</span></div> : null}<label className="block rounded-2xl bg-white/10 p-4 text-white"><span className="mb-2 block text-sm font-semibold">Coupon code</span><input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="Enter coupon code" className="w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-[#60371b] outline-none" /><span className="mt-2 block text-xs text-[#f7f0dc]">Try JAWBONE10 or CONTRACTOR-OREN</span></label><div className="flex justify-between border-t border-white/20 pt-4 text-xl font-bold text-white"><span>Total</span><span>{formatUSD(total)}</span></div></div>{!isLoggedIn ? <div className="mt-6 rounded-2xl bg-white/10 p-4 text-sm leading-6 text-[#f7f0dc]">You need to login or register before checkout.</div> : null}<Button variant="gold" onClick={() => setScreen(isLoggedIn ? "checkout" : "account")} className="mt-7 w-full">{isLoggedIn ? "Checkout" : "Login / Register to checkout"}</Button></aside></main>;
+}
+
+function CheckoutPage({ cart, couponCode, setCouponCode, isLoggedIn, setScreen, userType, storeCredit = 0, useStoreCredit, setUseStoreCredit }) {
+  const subtotal = getSubtotal(cart);
+  const shipping = getShipping(cart);
+  const discount = getCouponDiscount(subtotal, couponCode);
+  const subtotalAfterDiscount = Math.max(0, subtotal - discount);
+  const appliedStoreCredit = userType === "contractor" && useStoreCredit ? getStoreCreditToApply(storeCredit, subtotalAfterDiscount) : 0;
+  const total = Math.max(0, subtotalAfterDiscount - appliedStoreCredit) + shipping;
+  if (!isLoggedIn) return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className="mx-auto max-w-[760px] rounded-3xl bg-[#fffaeb] p-8 text-center shadow-sm"><h1 className="text-4xl font-semibold text-[#60371b]">Login required</h1><p className="mt-4 text-lg leading-8 text-gray-700">To continue to checkout, please login or create a consumer account.</p><Button onClick={() => setScreen("account")} className="mt-8">Login / Register</Button></div></main>;
+  return <main className={`grid gap-8 ${APP_PAGE_BG} ${APP_PAGE_PADDING} lg:grid-cols-[1fr_420px]`}><div><h1 className="text-5xl font-semibold text-[#60371b]">Checkout</h1><div className="mt-8 rounded-3xl bg-[#fffaeb] p-7 shadow-sm">{["Full name", "Email", "Phone", "Address", "City"].map((label) => <FormField key={label} label={label} />)}<label className="mb-5 block text-[#60371b]"><span className="mb-2 block font-semibold">Coupon code</span><input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="Enter coupon code" className="w-full rounded border border-[#60371b33] bg-[#f3f1ed] px-4 py-3 outline-none" /></label>{userType === "contractor" ? <label className="mb-5 flex items-center justify-between rounded-2xl bg-[#fff4c8] p-4 text-[#60371b]"><div><div className="font-bold">Use Store Score credit</div><div className="text-sm">Available: {formatUSD(storeCredit)}</div></div><input type="checkbox" checked={useStoreCredit} onChange={(e) => setUseStoreCredit(e.target.checked)} className="h-5 w-5" /></label> : null}<div className="mb-5 rounded-2xl bg-[#f3f1ed] p-4 text-[#60371b]"><div className="flex justify-between"><span>Subtotal</span><b>{formatUSD(subtotal)}</b></div><div className="flex justify-between"><span>Coupon discount</span><b>-{formatUSD(discount)}</b></div>{userType === "contractor" ? <div className="flex justify-between"><span>Store Score credit</span><b>-{formatUSD(appliedStoreCredit)}</b></div> : null}<div className="flex justify-between"><span>Shipping</span><b>{formatUSD(shipping)}</b></div><div className="mt-3 flex justify-between border-t border-[#60371b22] pt-3 text-xl"><span>Total</span><b>{formatUSD(total)}</b></div></div><Button className="w-full">Place order</Button></div></div><aside className="h-fit rounded-3xl bg-[#dcb375] p-7 text-[#60371b]"><Icon name="truck" size={32} /><h2 className="mt-4 text-2xl font-bold">Paid delivery</h2><p className="mt-3 leading-7">Delivery is calculated from product weight. Current cart weight: {getWeight(cart).toFixed(1)} kg.</p></aside></main>;
+}
+
+function ProfileField({ label, value }) {
+  return <div className="rounded-2xl border border-[#60371b22] bg-[#f3f1ed] px-4 py-3"><div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#60371b99]">{label}</div><div className="mt-1 font-semibold text-[#60371b]">{value}</div></div>;
+}
+
+function EditableProfileField({ label, value, editable, onChange, type = "text" }) {
+  if (!editable) return <ProfileField label={label} value={value} />;
+  return <label className="block rounded-2xl border border-[#60371b22] bg-[#f3f1ed] px-4 py-3"><span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#60371b99]">{label}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full bg-transparent font-semibold text-[#60371b] outline-none" /></label>;
+}
+
+function LockedProfileField({ label, value }) {
+  return <div className="rounded-2xl border border-[#60371b22] bg-gray-50 px-4 py-3 opacity-90"><div className="flex items-center justify-between gap-3"><div><div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#60371b99]">{label}</div><div className="mt-1 font-semibold text-[#60371b]">{value}</div></div><span className="rounded-full bg-[#60371b11] px-3 py-1 text-xs font-bold text-[#60371b]">Locked</span></div></div>;
+}
+
+function AccountPage({ onLogin, isLoggedIn, userType, logout, setScreen, storeCredit = 0, referredSales = 0, shareCoupon = () => undefined, favorites = [], setSelected, addToCart, toggleFavorite, isFavorite, goToScreen }) {
+  const [mode, setMode] = useState("login");
+  const [accountType, setAccountType] = useState("consumer");
+  const [editPersonal, setEditPersonal] = useState(false);
+  const [editAddress, setEditAddress] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordDetails, setPasswordDetails] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [activeTab, setActiveTab] = useState("profile");
+  const [personalDetails, setPersonalDetails] = useState({ fullName: userType === "contractor" ? "Oren Contractor" : "Sarah Customer", email: "customer@jawbone.com", phone: "+1 (555) 120-3400" });
+  const [addressDetails, setAddressDetails] = useState({ street: "123 Warehouse Drive", city: "Chatsworth", state: "CA", zip: "91311" });
+  if (isLoggedIn) {
+    const isContractor = userType === "contractor";
+    const fallbackInitials = isContractor ? "CO" : "CU";
+    const updatePersonal = (key, value) => setPersonalDetails((current) => ({ ...current, [key]: value }));
+    const updateAddress = (key, value) => setAddressDetails((current) => ({ ...current, [key]: value }));
+    const handleImageUpload = (event) => { const file = event.files?.[0] || event.target?.files?.[0]; if (file) setProfileImage(URL.createObjectURL(file)); };
+    const updatePassword = (key, value) => setPasswordDetails((current) => ({ ...current, [key]: value }));
+    const handleChangePassword = (event) => {
+      event.preventDefault();
+      if (!passwordDetails.currentPassword || !passwordDetails.newPassword || !passwordDetails.confirmPassword) {
+        setPasswordMessage("Please complete all password fields.");
+        return;
+      }
+      if (passwordDetails.newPassword.length < 8) {
+        setPasswordMessage("New password must be at least 8 characters.");
+        return;
+      }
+      if (passwordDetails.newPassword !== passwordDetails.confirmPassword) {
+        setPasswordMessage("Passwords do not match.");
+        return;
+      }
+      setPasswordDetails({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordMessage("Password updated successfully.");
+      setShowPasswordForm(false);
+    };
+    const openFavoriteProduct = (product) => { if (setSelected) setSelected(product); if (goToScreen) goToScreen("product"); };
+    return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><div className="grid gap-8 lg:grid-cols-[340px_1fr]"><aside className="rounded-3xl bg-[#60371b] p-7 text-white shadow-sm"><div className="flex items-center gap-4"><div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-[#dcb375] bg-[#f3f1ed] text-2xl font-bold text-[#60371b]"><span>{fallbackInitials}</span>{profileImage ? <img src={profileImage} alt="Profile avatar" className="absolute inset-0 h-full w-full object-cover" /> : null}</div><div><div className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Profile</div><h1 className="text-2xl font-semibold">{isContractor ? "Contractor Account" : "Consumer Account"}</h1></div></div><label className="mt-6 block cursor-pointer rounded-2xl bg-white/10 px-4 py-3 text-center text-sm font-semibold text-[#f7f0dc] hover:bg-white/15">Change profile image<input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" /></label><div className="mt-8 space-y-3 text-sm text-[#f7f0dc]">
+  <button onClick={() => setActiveTab("profile")} className={`block w-full rounded-2xl px-4 py-3 text-left ${activeTab === "profile" ? "bg-white/10 font-semibold" : "hover:bg-white/10"}`}>Profile details</button>
+  <button onClick={() => setActiveTab("orders")} className={`block w-full rounded-2xl px-4 py-3 text-left ${activeTab === "orders" ? "bg-white/10 font-semibold" : "hover:bg-white/10"}`}>Orders</button>
+  <button onClick={() => setActiveTab("favorites")} className={`block w-full rounded-2xl px-4 py-3 text-left ${activeTab === "favorites" ? "bg-white/10 font-semibold" : "hover:bg-white/10"}`}>Favorites</button>
+  {isContractor ? <button onClick={() => setActiveTab("contractor")} className={`block w-full rounded-2xl px-4 py-3 text-left ${activeTab === "contractor" ? "bg-white/10 font-semibold" : "hover:bg-white/10"}`}>Contractor dashboard</button> : null}
+</div><Button variant="gold" onClick={logout} className="mt-8 w-full">Logout</Button></aside><section className="space-y-6">
+  <style>{`@keyframes accountFadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } } .account-tab-panel { animation: accountFadeSlide 260ms ease-out both; }`}</style>
+
+  {activeTab === "profile" && (
+    <div key="profile" className="account-tab-panel space-y-6">
+      <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Account overview</p>
+            <h2 className="mt-2 text-4xl font-semibold text-[#60371b]">My Profile</h2>
+            <p className="mt-2 text-gray-600">Manage customer data, default address, orders, and account settings.</p>
+          </div>
+          <span className="w-fit rounded-full bg-[#f3f1ed] px-4 py-2 text-sm font-semibold text-[#60371b]">{isContractor ? "Contractor · Approved" : "Consumer"}</span>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm">
+          <div className="flex items-center justify-between gap-4"><h3 className="text-2xl font-semibold text-[#60371b]">Personal details</h3><button onClick={() => setEditPersonal((open) => !open)} className={`flex h-10 w-10 items-center justify-center rounded-full border border-[#60371b22] transition ${editPersonal ? "bg-[#60371b] text-white" : "bg-white text-[#60371b] hover:bg-[#f3f1ed]"}`} aria-label="Edit personal details"><Icon name="edit" size={16} /></button></div>
+          <div className="mt-5 grid gap-4"><EditableProfileField label="Full name" value={personalDetails.fullName} editable={editPersonal} onChange={(value) => updatePersonal("fullName", value)} /><EditableProfileField label="Email" value={personalDetails.email} editable={editPersonal} onChange={(value) => updatePersonal("email", value)} type="email" /><EditableProfileField label="Phone" value={personalDetails.phone} editable={editPersonal} onChange={(value) => updatePersonal("phone", value)} /></div>
+        </div>
+        <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm">
+          <div className="flex items-center justify-between gap-4"><h3 className="text-2xl font-semibold text-[#60371b]">Default address</h3><button onClick={() => setEditAddress((open) => !open)} className={`flex h-10 w-10 items-center justify-center rounded-full border border-[#60371b22] transition ${editAddress ? "bg-[#60371b] text-white" : "bg-white text-[#60371b] hover:bg-[#f3f1ed]"}`} aria-label="Edit address"><Icon name="edit" size={16} /></button></div>
+          <div className="mt-5 grid gap-4"><EditableProfileField label="Street" value={addressDetails.street} editable={editAddress} onChange={(value) => updateAddress("street", value)} /><EditableProfileField label="City" value={addressDetails.city} editable={editAddress} onChange={(value) => updateAddress("city", value)} /><EditableProfileField label="State" value={addressDetails.state} editable={editAddress} onChange={(value) => updateAddress("state", value)} /><EditableProfileField label="ZIP" value={addressDetails.zip} editable={editAddress} onChange={(value) => updateAddress("zip", value)} /></div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-2xl font-semibold text-[#60371b]">Account settings</h3>
+            <p className="mt-1 text-sm text-gray-600">Manage account preferences and security.</p>
+          </div>
+          <Button variant="outline" onClick={() => { setShowPasswordForm((open) => !open); setPasswordMessage(""); }}>{showPasswordForm ? "Cancel password change" : "Change password"}</Button>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-3"><ProfileField label="Customer type" value={isContractor ? "Approved contractor" : "Retail customer"} /><ProfileField label="Marketing" value="Subscribed" /><ProfileField label="Default delivery" value="Paid freight" /></div>
+        {showPasswordForm ? <form onSubmit={handleChangePassword} className="mt-6 rounded-2xl bg-[#f3f1ed] p-5"><h4 className="text-xl font-bold text-[#60371b]">Change password</h4><div className="mt-4 grid gap-4 md:grid-cols-3"><label className="block text-[#60371b]"><span className="mb-2 block text-sm font-semibold">Current password</span><input type="password" value={passwordDetails.currentPassword} onChange={(event) => updatePassword("currentPassword", event.target.value)} className="w-full rounded-xl border border-[#60371b22] bg-white px-4 py-3 outline-none" /></label><label className="block text-[#60371b]"><span className="mb-2 block text-sm font-semibold">New password</span><input type="password" value={passwordDetails.newPassword} onChange={(event) => updatePassword("newPassword", event.target.value)} className="w-full rounded-xl border border-[#60371b22] bg-white px-4 py-3 outline-none" /></label><label className="block text-[#60371b]"><span className="mb-2 block text-sm font-semibold">Confirm password</span><input type="password" value={passwordDetails.confirmPassword} onChange={(event) => updatePassword("confirmPassword", event.target.value)} className="w-full rounded-xl border border-[#60371b22] bg-white px-4 py-3 outline-none" /></label></div><Button type="submit" className="mt-5">Update password</Button></form> : null}
+        {passwordMessage ? <div className={`mt-5 rounded-xl px-4 py-3 text-sm font-semibold ${passwordMessage.includes("successfully") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{passwordMessage}</div> : null}
+      </div>
+    </div>
+  )}
+
+  {activeTab === "orders" && (
+    <div key="orders" className="account-tab-panel space-y-5">
+      <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Order history</p><h2 className="mt-2 text-4xl font-semibold text-[#60371b]">My Orders</h2><p className="mt-2 text-gray-600">Track deliveries, review past purchases, and reorder common materials.</p></div>
+      {mockOrders.map((order) => <article key={order.id} className="rounded-3xl bg-[#fffaeb] p-6 shadow-sm"><div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div><div className="flex flex-wrap items-center gap-3"><h3 className="text-2xl font-bold text-[#60371b]">Order #{order.id}</h3><span className="rounded-full bg-[#fff4c8] px-3 py-1 text-xs font-bold text-[#60371b]">{order.status}</span></div><p className="mt-2 text-sm text-gray-600">Placed on {order.date}</p></div><div className="text-left md:text-right"><div className="text-sm text-gray-500">Total</div><div className="text-2xl font-bold text-[#60371b]">{formatUSD(order.total)}</div></div></div></article>)}
+    </div>
+  )}
+
+  {activeTab === "favorites" && (
+    <div key="favorites" className="account-tab-panel space-y-6">
+      <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Saved products</p><h2 className="mt-2 text-4xl font-semibold text-[#60371b]">Favorites</h2><p className="mt-2 text-gray-600">Products saved to revisit later.</p></div>
+      {favorites.length === 0 ? <div className="rounded-3xl bg-[#fffaeb] p-12 text-center text-[#60371b] shadow-sm"><Icon name="heart" size={44} /><h3 className="mt-4 text-2xl font-semibold">No favorite products yet</h3><p className="mt-2 text-gray-600">Save products you want to revisit later.</p><Button onClick={() => setScreen("shop")} className="mt-6">Go Shop</Button></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{favorites.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart || (() => undefined)} toggleFavorite={toggleFavorite || (() => undefined)} isFavorite={isFavorite || (() => true)} openProduct={openFavoriteProduct} />)}</div>}
+    </div>
+  )}
+
+  {activeTab === "contractor" && isContractor && (
+    <div key="contractor" className="account-tab-panel space-y-6">
+      <div className="grid overflow-hidden rounded-3xl bg-[#fffaeb] shadow-sm lg:grid-cols-[1fr_260px]"><div className="p-7"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Contractor dashboard</p><h2 className="mt-2 text-4xl font-semibold text-[#60371b]">CONTRACTOR-OREN</h2><p className="mt-3 text-gray-600">Share your coupon and track Store Score rewards from referred purchases.</p><button onClick={shareCoupon} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#60371b] px-5 py-3 text-sm font-bold text-white"><Icon name="share" size={16} /> Share coupon</button></div><div className="bg-[#dcb375] p-7 text-[#60371b]"><p className="text-sm font-bold uppercase tracking-[0.2em]">Store Score</p><div className="mt-3 text-6xl font-black">86</div><p className="mt-4 text-sm font-semibold">Available credit</p><div className="text-3xl font-black">{formatUSD(storeCredit)}</div><p className="mt-2 text-sm">Earned from {formatUSD(referredSales)}</p></div></div>
+      <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><h3 className="text-2xl font-semibold text-[#60371b]">Referred orders</h3><div className="mt-6 divide-y divide-[#60371b22] border-y border-[#60371b22]">{referredOrders.map((order) => <div key={order.id} className="grid gap-3 py-5 md:grid-cols-[1fr_1fr_1fr_1fr] md:items-center"><div><div className="font-bold text-[#60371b]">{order.id}</div><div className="text-sm text-gray-600">{order.customer}</div></div><div className="text-sm text-gray-700">{order.date}</div><div><div className="font-bold text-[#60371b]">{formatUSD(order.orderTotal)}</div><div className="text-xs text-gray-600">Order total</div></div><div className="text-left md:text-right"><div className="font-bold text-[#60371b]">+{formatUSD(order.reward)}</div><span className="mt-1 inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">{order.status}</span></div></div>)}</div></div>
+    </div>
+  )}
+</section></div></div></main>;
+  }
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className="mx-auto grid max-w-[1240px] gap-8 lg:grid-cols-[0.9fr_1.1fr]"><section className="h-full">
+  <div className="relative h-full overflow-hidden rounded-3xl bg-[#60371b] p-8 text-white flex flex-col justify-center">
+    <img src="https://res.cloudinary.com/dnwij22qh/image/upload/q_auto/f_auto/v1777429230/not_connected_img_v3ponk.png" alt="Login illustration" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+    <div className="relative">
+      <p className="text-sm uppercase tracking-[0.25em] text-[#dcb375]">Account access</p>
+      <h1 className="mt-3 text-5xl font-semibold">Login or create an account</h1>
+      <p className="mt-5 text-lg leading-8 text-[#f7f0dc]">Consumers can register and purchase immediately. Contractors must submit business details and wait for approval.</p>
+    </div>
+  </div>
+</section><section className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><div className="mb-6 flex gap-2 rounded-2xl bg-[#f3f1ed] p-2"><button onClick={() => setMode("login")} className={`flex-1 rounded-xl px-4 py-3 font-semibold ${mode === "login" ? "bg-[#60371b] text-white" : "text-[#60371b]"}`}>Login</button><button onClick={() => setMode("register")} className={`flex-1 rounded-xl px-4 py-3 font-semibold ${mode === "register" ? "bg-[#60371b] text-white" : "text-[#60371b]"}`}>Register</button></div>{mode === "login" ? <div className="space-y-4"><h2 className="text-3xl font-semibold text-[#60371b]">Welcome back</h2><FormField label="Email" type="email" /><FormField label="Password" type="password" /><Button onClick={() => onLogin("consumer", "checkout")} className="w-full">Login and continue</Button><button onClick={() => onLogin("contractor", "account", "approved")} className="w-full rounded-xl border border-[#60371b] px-5 py-3 text-sm font-semibold text-[#60371b]">Login as contractor demo</button></div> : <div className="space-y-4"><h2 className="text-3xl font-semibold text-[#60371b]">Create account</h2><div className="grid gap-3 md:grid-cols-2"><button onClick={() => setAccountType("consumer")} className={`rounded-2xl border p-4 text-left ${accountType === "consumer" ? "border-[#60371b] bg-[#f3f1ed]" : "border-[#60371b33]"}`}><b className="text-[#60371b]">Consumer</b><p className="text-sm text-gray-700">Private customer</p></button><button onClick={() => setAccountType("contractor")} className={`rounded-2xl border p-4 text-left ${accountType === "contractor" ? "border-[#60371b] bg-[#f3f1ed]" : "border-[#60371b33]"}`}><b className="text-[#60371b]">Contractor</b><p className="text-sm text-gray-700">Requires approval</p></button></div>{accountType === "consumer" ? <div className="space-y-4"><RegisterSection title="Personal Details"><FormField label="First Name" /><FormField label="Last Name" /><FormField label="Phone" /><FormField label="Email" type="email" /><FormField label="Password" type="password" /></RegisterSection><RegisterSection title="Address"><FormField label="Street Address" /><FormField label="City" /><FormField label="State" /><FormField label="ZIP Code" /></RegisterSection><div className="space-y-3 rounded-2xl bg-[#f3f1ed] p-5"><AgreementRow><LegalAgreementText setScreen={setScreen} /></AgreementRow><AgreementRow>I agree to receive updates and promotional communications</AgreementRow></div><Button onClick={() => onLogin("consumer", "checkout")} className="w-full">Create account and continue</Button></div> : <div className="space-y-4"><RegisterSection title="Personal Details"><FormField label="First Name" /><FormField label="Last Name" /><FormField label="Phone" /><FormField label="Email" type="email" /><FormField label="Password" type="password" /></RegisterSection><RegisterSection title="Address"><FormField label="Street Address" /><FormField label="City" /><FormField label="State" /><FormField label="ZIP Code" /></RegisterSection><RegisterSection title="Business Details" description="Contractors must submit required business details and wait for admin approval."><FormField label="Business name" /><FormField label="License number" /><FormField label="Tax ID" /><label className="block text-[#60371b] md:col-span-2"><span className="mb-2 block font-semibold">Upload supporting documents</span><input type="file" multiple className="w-full rounded border border-[#60371b33] bg-white px-4 py-3" /></label></RegisterSection><div className="space-y-3 rounded-2xl bg-[#f3f1ed] p-5"><AgreementRow>I confirm the business details are accurate</AgreementRow><AgreementRow><LegalAgreementText setScreen={setScreen} /></AgreementRow></div><Button onClick={() => onLogin("contractor", "contractor", "pending")} className="w-full">Submit for approval</Button></div>}</div>}</section></div></main>;
+}
+
+function OrdersPage({ setScreen }) {
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><div className="flex flex-col gap-4 rounded-3xl bg-[#fffaeb] p-7 shadow-sm md:flex-row md:items-center md:justify-between"><div><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Order history</p><h1 className="mt-2 text-5xl font-semibold text-[#60371b]">My Orders</h1><p className="mt-2 text-gray-600">Track deliveries, review past purchases, and reorder common materials.</p></div><Button onClick={() => setScreen("shop")}>Continue shopping</Button></div><div className="mt-8 space-y-5">{mockOrders.map((order) => <article key={order.id} className="rounded-3xl bg-[#fffaeb] p-6 shadow-sm"><div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div><div className="flex flex-wrap items-center gap-3"><h2 className="text-2xl font-bold text-[#60371b]">Order #{order.id}</h2><span className="rounded-full bg-[#fff4c8] px-3 py-1 text-xs font-bold text-[#60371b]">{order.status}</span></div><p className="mt-2 text-sm text-gray-600">Placed on {order.date}</p></div><div className="text-left md:text-right"><div className="text-sm text-gray-500">Total</div><div className="text-2xl font-bold text-[#60371b]">{formatUSD(order.total)}</div></div></div></article>)}</div></div></main>;
+}
+
+function ContractorPage({ isLoggedIn, userType, contractorStatus = "none", setScreen, storeCredit = 0, referredSales = 0, shareCoupon = () => undefined }) {
+  const isApprovedContractor = isLoggedIn && userType === "contractor" && contractorStatus === "approved";
+  const isPendingContractor = isLoggedIn && userType === "contractor" && contractorStatus === "pending";
+  if (isPendingContractor) return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><section className="bg-[#60371b] px-6 py-16 text-white md:px-12 lg:px-16"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Contractor application</p><h1 className="mt-4 max-w-4xl text-5xl font-semibold leading-tight">Your contractor application is pending approval</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-[#f7f0dc]">Thank you for submitting your contractor details. The Jawbone team is reviewing your business information, documentation, and delivery requirements. Once approved, your contractor coupon and Store Score access will become active.</p></section></div></main>;
+  if (!isApprovedContractor) {
+    const steps = [["01", "Create a contractor account", "Submit your personal contact information, address, and business details through the contractor registration flow."], ["02", "Business review", "Jawbone reviews the submitted company information, license details, tax information, and supporting documents."], ["03", "Approval and coupon setup", "Once approved, the contractor receives a unique coupon code to share with customers and project contacts."], ["04", "Earn Store Score", "Qualified orders connected to the contractor coupon help build Store Score credit that can be used toward future purchases."]];
+    const benefits = ["Contractor account approval flow", "Unique shareable coupon code", "Access to contractor-focused pricing logic", "Store Score rewards from referred purchases", "Centralized order and referral visibility", "Support for ongoing commercial demand"];
+    return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><section className="grid min-h-[520px] overflow-hidden bg-[#60371b] lg:grid-cols-[1.05fr_0.95fr]"><div className="flex flex-col justify-center px-6 py-14 text-white md:px-12 lg:px-16"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Contractor program</p><h1 className="mt-4 text-5xl font-semibold leading-tight md:text-6xl">Built for contractors, commercial demand, and ongoing projects</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-[#f7f0dc]">Contractors can register with Jawbone Products to access an approval-based account experience designed for repeat purchasing, project supply, referrals, and customer coupon sharing.</p><div className="mt-8 flex flex-wrap gap-3"><Button variant="gold" onClick={() => setScreen("account")}>Register as contractor</Button><Button variant="outline" onClick={() => setScreen("shop")} className="border-white bg-white/10 text-white hover:bg-white/15">View products</Button></div></div><div className="relative min-h-[340px] bg-[linear-gradient(140deg,rgba(220,179,117,0.5),rgba(255,250,235,0.12))] p-6 md:p-10"><div className="flex h-full flex-col justify-end border border-white/20 p-7 text-white"><p className="text-sm uppercase tracking-[0.22em] text-[#f7f0dc]">Program focus</p><div className="mt-6 grid gap-5"><div><div className="text-5xl font-black text-[#dcb375]">15%</div><p className="mt-2 text-sm leading-6 text-[#f7f0dc]">Example contractor coupon discount shown in prototype logic.</p></div><div><div className="text-5xl font-black text-[#dcb375]">5%</div><p className="mt-2 text-sm leading-6 text-[#f7f0dc]">Example Store Score reward rate from referred purchase activity.</p></div></div></div></div></section><section className="mt-12 grid gap-10 border-y border-[#60371b22] py-12 lg:grid-cols-[0.9fr_1.1fr]"><div><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Overview</p><h2 className="mt-3 text-4xl font-semibold leading-tight text-[#60371b]">How contractor accounts work</h2></div><div className="space-y-5 text-lg leading-8 text-gray-800"><p>A contractor registers on the website and submits the required personal, address, and business details. After the contractor is approved, Jawbone can assign a coupon code that the contractor can share with customers.</p><p>The coupon creates a simple referral path: customers can purchase using the contractor code, while the contractor can track referred orders and Store Score credit from their dashboard.</p><p className="font-semibold uppercase tracking-wide text-[#60371b]">Designed to support commercial demand, repeat orders, and project-based purchasing.</p></div></section><section className="py-12"><div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Approval process</p><h2 className="mt-3 text-4xl font-semibold text-[#60371b]">From registration to approved contractor</h2></div><p className="max-w-md text-sm leading-6 text-gray-600">This section explains the flow clearly for the client and future users before they register.</p></div><div className="divide-y divide-[#60371b22] border-y border-[#60371b22]">{steps.map(([number, title, description]) => <div key={number} className="grid gap-4 py-7 md:grid-cols-[90px_0.7fr_1.3fr] md:items-start"><div className="text-3xl font-black text-[#dcb375]">{number}</div><h3 className="text-2xl font-semibold text-[#60371b]">{title}</h3><p className="text-base leading-7 text-gray-700">{description}</p></div>)}</div></section><section className="grid gap-10 bg-[#fffaeb] px-6 py-12 md:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:px-12"><div><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Program benefits</p><h2 className="mt-3 text-4xl font-semibold leading-tight text-[#60371b]">Why contractors use Jawbone</h2><p className="mt-5 text-lg leading-8 text-gray-700">The contractor experience is not only a discount flow. It is a relationship layer that connects purchasing, referrals, fulfillment, and ongoing project supply.</p></div><div className="grid gap-4 md:grid-cols-2">{benefits.map((benefit) => <div key={benefit} className="border-b border-[#60371b22] pb-4 text-lg font-semibold text-[#60371b]">{benefit}</div>)}</div></section></div></main>;
+  }
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><section className="grid min-h-[420px] overflow-hidden bg-[#60371b] lg:grid-cols-[1.1fr_0.9fr]"><div className="flex flex-col justify-center px-6 py-12 text-white md:px-12"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Contractor dashboard</p><h1 className="mt-4 text-5xl font-semibold leading-tight">Your contractor account</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-[#f7f0dc]">Manage your contractor coupon, review referred activity, and use Store Score credit from approved customer purchases.</p></div><div className="flex flex-col justify-center bg-[#dcb375] px-6 py-12 text-[#60371b] md:px-10"><p className="text-sm font-bold uppercase tracking-[0.2em]">Store Score</p><div className="mt-3 text-7xl font-black">86</div><p className="mt-3 leading-7">Based on activity and referred purchases.</p><div className="mt-7 border-t border-[#60371b33] pt-6"><div className="text-sm font-semibold">Available credit</div><div className="text-4xl font-black">{formatUSD(storeCredit)}</div><div className="mt-2 text-sm">Earned from {formatUSD(referredSales)}</div></div></div></section><section className="grid gap-10 border-y border-[#60371b22] py-12 lg:grid-cols-[0.8fr_1.2fr]"><div><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Your coupon</p><h2 className="mt-3 text-4xl font-semibold text-[#60371b]">CONTRACTOR-OREN</h2><button onClick={shareCoupon} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#60371b] px-5 py-3 text-sm font-bold text-white"><Icon name="share" size={16} /> Share coupon</button></div><div className="space-y-4 text-lg leading-8 text-gray-700"><p>Share this code with customers or project contacts. Purchases connected to the contractor coupon can contribute to your Store Score credit.</p><p>This keeps your referral activity visible and gives Jawbone a clear way to connect customer orders back to your contractor relationship.</p></div></section><section className="py-12"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Referral history</p><h2 className="mt-3 text-4xl font-semibold text-[#60371b]">Referred orders</h2><div className="mt-8 divide-y divide-[#60371b22] border-y border-[#60371b22]">{referredOrders.map((order) => <div key={order.id} className="grid gap-3 py-5 md:grid-cols-[1fr_1fr_1fr_1fr] md:items-center"><div><div className="font-bold text-[#60371b]">{order.id}</div><div className="text-sm text-gray-600">{order.customer}</div></div><div className="text-sm text-gray-700">{order.date}</div><div><div className="font-bold text-[#60371b]">{formatUSD(order.orderTotal)}</div><div className="text-xs text-gray-600">Order total</div></div><div className="text-left md:text-right"><div className="font-bold text-[#60371b]">+{formatUSD(order.reward)}</div><span className="mt-1 inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">{order.status}</span></div></div>)}</div></section></div></main>;
+}
+
+function LegalPage({ type, setScreen }) {
+  const isPrivacy = type === "privacy";
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className="mx-auto max-w-[1000px]"><button onClick={() => setScreen("account")} className="mb-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#60371b] shadow-sm"><Icon name="arrowLeft" size={16} /> Back to account</button><section className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm md:p-10"><p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Legal</p><h1 className="mt-3 text-4xl font-semibold text-[#60371b] md:text-5xl">{isPrivacy ? "Privacy Policy" : "Terms & Conditions"}</h1><p className="mt-4 text-gray-600">Placeholder page. We will replace this with the final legal text later.</p><div className="mt-8 space-y-6 text-gray-800"><div className="rounded-2xl bg-[#f3f1ed] p-5"><h2 className="text-xl font-bold text-[#60371b]">1. Introduction</h2><p className="mt-3 leading-7">This section will contain the official {isPrivacy ? "privacy policy" : "terms and conditions"} content for Jawbone Products.</p></div><div className="rounded-2xl bg-[#f3f1ed] p-5"><h2 className="text-xl font-bold text-[#60371b]">2. Scope</h2><p className="mt-3 leading-7">Add the final client-approved legal language here.</p></div><div className="rounded-2xl bg-[#f3f1ed] p-5"><h2 className="text-xl font-bold text-[#60371b]">3. Contact</h2><p className="mt-3 leading-7">For questions, contact Jawbone Products through the contact page.</p></div></div></section></div></main>;
+}
+
+function FAQContactPage() {
+  const [openFaq, setOpenFaq] = useState(0);
+  const faqs = [
+    { icon: "cart", question: "What products does Jawbone supply?", answer: "Jawbone supplies construction, agricultural, landscaping, wood, lumber, tools, and general building materials." },
+    { icon: "truck", question: "How is shipping calculated?", answer: "Shipping is calculated by the total product weight in the cart." },
+    { icon: "edit", question: "Do contractors need approval?", answer: "Yes. Contractors register, submit business details and supporting documents, and wait for approval before accessing contractor benefits." },
+    { icon: "share", question: "How does the contractor coupon work?", answer: "Approved contractors receive a coupon code they can share. Purchases through that coupon can increase their Store Score credit." },
+  ];
+  return <main className={`${APP_PAGE_BG} ${APP_PAGE_PADDING}`}><div className={APP_CONTAINER}><section className="overflow-hidden rounded-3xl bg-[#60371b] text-white shadow-sm"><div className="p-8 md:p-12"><p className="text-sm uppercase tracking-[0.25em] text-[#dcb375]">Support</p><h1 className="mt-3 text-5xl font-semibold">FAQ & Contact Us</h1><p className="mt-5 max-w-xl text-lg leading-8 text-[#f7f0dc]">Have a question about products, delivery, contractor approval, or orders? Send us a message and the Jawbone team will get back to you.</p></div></section><section className="mt-10 space-y-8"><div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">FAQ</p><h2 className="mt-2 text-3xl font-semibold text-[#60371b]">Frequently Asked Questions</h2><div className="mt-6 space-y-4">{faqs.map((item, index) => <div key={item.question} className="overflow-hidden rounded-2xl border border-[#60371b22] bg-[#f3f1ed]"><button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex w-full items-center justify-between gap-4 p-5 text-left font-bold text-[#60371b]"><span className="flex items-center gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#dcb375]/35"><Icon name={item.icon} size={20} /></span>{item.question}</span><span>+</span></button>{openFaq === index ? <p className="px-5 pb-5 pl-[84px] leading-7 text-gray-700">{item.answer}</p> : null}</div>)}</div></div><div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Contact us</p><h2 className="mt-2 text-3xl font-semibold text-[#60371b]">Send a Message</h2><div className="mt-6 grid gap-4 md:grid-cols-2"><FormField label="First Name" /><FormField label="Last Name" /></div><FormField label="Email" type="email" /><FormField label="Phone" /><TextAreaField label="Message" /><Button className="w-full">Submit Message</Button></div></section></div></main>;
+}
+
+function AdminStatCard({ label, value, note }) {
+  return <div className="rounded-3xl bg-[#fffaeb] p-6 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">{label}</p><div className="mt-3 text-4xl font-black text-[#60371b]">{value}</div><p className="mt-2 text-sm text-gray-600">{note}</p></div>;
+}
+
+function AdminRow({ children }) {
+  return <div className="grid gap-4 border-b border-[#60371b22] px-5 py-4 text-sm text-[#60371b] last:border-b-0 md:grid-cols-5 md:items-center">{children}</div>;
+}
+
+function AdminPanel() {
+  const [tab, setTab] = useState("dashboard");
+  const tabs = ["dashboard", "users", "products", "orders", "invoices", "contractors", "settings"];
+  const stockCount = products.filter((product) => product.inStock !== false).length;
+  const pendingContractors = adminUsers.filter((user) => user.type === "Contractor" && user.status === "Pending").length;
+
+  return <main className={`${APP_PAGE_BG} px-5 py-8 md:px-10 lg:px-[80px]`}>
+    <div className="mx-auto max-w-[1440px]">
+      <section className="overflow-hidden rounded-[2rem] bg-[#60371b] text-white shadow-sm">
+        <div className="grid gap-8 p-8 lg:grid-cols-[1fr_360px] lg:p-10">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#dcb375]">Admin Back Office</p>
+            <h1 className="mt-3 text-5xl font-semibold leading-tight">Jawbone Admin Panel</h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-[#f7f0dc]">Manage users, contractors, products, pricing, inventory, orders, invoices, coupons, Store Score, and operational settings from one place.</p>
+          </div>
+          <div className="rounded-3xl bg-white/10 p-6">
+            <p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Today</p>
+            <div className="mt-3 text-4xl font-black">{formatUSD(6123)}</div>
+            <p className="mt-2 text-sm text-[#f7f0dc]">Revenue across 12 orders</p>
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm"><div className="rounded-2xl bg-white/10 p-3"><b>3</b><br />Pending orders</div><div className="rounded-2xl bg-white/10 p-3"><b>{pendingContractors}</b><br />Contractors</div></div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
+        <aside className="h-fit rounded-3xl bg-[#60371b] p-4 text-white shadow-sm">
+          <p className="px-4 py-3 text-xs font-bold uppercase tracking-[0.25em] text-[#dcb375]">Management</p>
+          <div className="space-y-2">
+            {tabs.map((item) => <button key={item} onClick={() => setTab(item)} className={`block w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold capitalize transition ${tab === item ? "bg-[#dcb375] text-[#60371b]" : "text-[#f7f0dc] hover:bg-white/10"}`}>{item}</button>)}
+          </div>
+        </aside>
+
+        <section className="space-y-6">
+          {tab === "dashboard" ? <div className="space-y-6">
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"><AdminStatCard label="Sales" value={formatUSD(6123)} note="Today revenue" /><AdminStatCard label="Orders" value="12" note="3 need fulfillment" /><AdminStatCard label="Products" value={products.length} note={`${stockCount} in stock`} /><AdminStatCard label="Store Score" value={formatUSD(292)} note="Open contractor credit" /></div>
+            <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><h2 className="text-3xl font-semibold text-[#60371b]">Operational Tasks</h2><div className="mt-5 grid gap-4 md:grid-cols-3"><button className="rounded-2xl bg-white p-5 text-left text-[#60371b] shadow-sm"><b>Review Contractors</b><p className="mt-2 text-sm text-gray-600">{pendingContractors} pending applications</p></button><button className="rounded-2xl bg-white p-5 text-left text-[#60371b] shadow-sm"><b>Low Stock</b><p className="mt-2 text-sm text-gray-600">Check inventory thresholds</p></button><button className="rounded-2xl bg-white p-5 text-left text-[#60371b] shadow-sm"><b>Open Invoices</b><p className="mt-2 text-sm text-gray-600">2 invoices need action</p></button></div></div>
+          </div> : null}
+
+          {tab === "users" ? <div className="rounded-3xl bg-[#fffaeb] shadow-sm"><div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between"><div><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Users</p><h2 className="text-3xl font-semibold text-[#60371b]">User Management</h2></div><button className="rounded-xl bg-[#60371b] px-5 py-3 text-sm font-bold text-white">Add User</button></div>{adminUsers.map((user) => <AdminRow key={user.id}><b>{user.name}</b><span>{user.type}</span><span>{user.email}</span><span>{user.status}</span><span className="md:text-right">{formatUSD(user.spend)}</span></AdminRow>)}</div> : null}
+
+          {tab === "products" ? <div className="rounded-3xl bg-[#fffaeb] shadow-sm"><div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between"><div><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Catalog</p><h2 className="text-3xl font-semibold text-[#60371b]">Product Management</h2></div><button className="rounded-xl bg-[#60371b] px-5 py-3 text-sm font-bold text-white">Add Product</button></div>{products.map((product) => <AdminRow key={product.id}><b>{product.title}</b><span>{product.category}</span><span>{product.inStock ? "In stock" : "Out of stock"}</span><span>{formatUSD(product.retailPrice)}</span><span className="md:text-right">Edit</span></AdminRow>)}</div> : null}
+
+          {tab === "orders" ? <div className="rounded-3xl bg-[#fffaeb] shadow-sm"><div className="p-6"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Orders</p><h2 className="text-3xl font-semibold text-[#60371b]">Order Management</h2></div>{mockOrders.map((order) => <AdminRow key={order.id}><b>{order.id}</b><span>{order.date}</span><span>{order.status}</span><span>{formatUSD(order.total)}</span><span className="md:text-right">View / Invoice</span></AdminRow>)}</div> : null}
+
+          {tab === "invoices" ? <div className="rounded-3xl bg-[#fffaeb] shadow-sm"><div className="p-6"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Finance</p><h2 className="text-3xl font-semibold text-[#60371b]">Invoice Management</h2></div>{adminInvoices.map((invoice) => <AdminRow key={invoice.id}><b>{invoice.id}</b><span>{invoice.customer}</span><span>{invoice.status}</span><span>{formatUSD(invoice.amount)}</span><span className="md:text-right">PDF / Send</span></AdminRow>)}</div> : null}
+
+          {tab === "contractors" ? <div className="space-y-6"><div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Contractors</p><h2 className="text-3xl font-semibold text-[#60371b]">Approval + Store Score</h2><p className="mt-2 text-gray-600">Approve contractor accounts, assign coupons, and review Store Score rewards.</p></div><div className="rounded-3xl bg-[#fffaeb] shadow-sm">{adminUsers.filter((user) => user.type === "Contractor").map((user) => <AdminRow key={user.id}><b>{user.name}</b><span>{user.status}</span><span>CONTRACTOR-{user.name.split(" ")[0].toUpperCase()}</span><span>{formatUSD(user.spend)}</span><span className="md:text-right">Approve / Suspend</span></AdminRow>)}</div></div> : null}
+
+          {tab === "settings" ? <div className="rounded-3xl bg-[#fffaeb] p-7 shadow-sm"><p className="text-sm uppercase tracking-[0.2em] text-[#dcb375]">Settings</p><h2 className="text-3xl font-semibold text-[#60371b]">System Settings</h2><div className="mt-6 grid gap-4 md:grid-cols-2"><ProfileField label="Currency" value="USD" /><ProfileField label="Shipping Rule" value="Weight x $12" /><ProfileField label="Store Score" value="5% reward" /><ProfileField label="Admin Roles" value="Super Admin, Ops, Finance" /></div></div> : null}
+        </section>
+      </div>
+    </div>
+  </main>;
+}
+
+function Footer({ setScreen }) {
+  return <footer className="mt-20 bg-[#60371b] text-white"><div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-12 md:grid-cols-4 md:px-10 lg:px-[100px]"><div><h3 className="text-xl font-bold">Jawbone Product</h3><p className="mt-4 text-sm text-[#f7f0dc]">Wholesale distribution of construction, agricultural, and building materials across the US.</p></div><div><h4 className="mb-3 font-semibold">Navigation</h4><div className="space-y-2 text-sm"><button onClick={() => setScreen("home")} className="block">Home</button><button onClick={() => setScreen("shop")} className="block">Shop</button><button onClick={() => setScreen("contact")} className="block">FAQ</button><button onClick={() => setScreen("privacy")} className="block">Privacy Policy</button><button onClick={() => setScreen("terms")} className="block">Terms & Conditions</button></div></div><div><h4 className="mb-3 font-semibold">Contact</h4><p className="text-sm text-[#f7f0dc]">Email: contact@jawboneproduct.com</p><p className="mt-1 text-sm text-[#f7f0dc]">Phone: 0185 17 35 08</p></div><div><h4 className="mb-3 font-semibold">Support</h4><p className="text-sm text-[#f7f0dc]">Fast delivery based on weight calculation.</p><p className="mt-1 text-sm text-[#f7f0dc]">Contractor accounts available upon approval.</p></div></div><div className="border-t border-white/20 py-4 text-center text-xs text-[#f7f0dc]">© {new Date().getFullYear()} Jawbone Product. All rights reserved.</div></footer>;
+}
+
+function WhatsAppButton() {
+  return <div className="fixed bottom-5 right-5 z-50"><a href="https://wa.me/15551203400" target="_blank" rel="noopener noreferrer" className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:scale-105" aria-label="WhatsApp"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.76 11.76 0 0 0 12.05 0C5.5 0 .2 5.3.2 11.85c0 2.1.55 4.14 1.6 5.94L0 24l6.36-1.66a11.77 11.77 0 0 0 5.7 1.45h.01c6.55 0 11.85-5.3 11.85-11.85 0-3.17-1.23-6.15-3.4-8.46ZM12.07 21.4c-1.8 0-3.56-.48-5.1-1.38l-.36-.22-3.78.99 1.01-3.69-.24-.38a9.44 9.44 0 0 1-1.44-5.02c0-5.22 4.25-9.47 9.47-9.47 2.53 0 4.9.98 6.7 2.77a9.4 9.4 0 0 1 2.77 6.7c0 5.22-4.25 9.47-9.47 9.47Zm5.2-7.05c-.28-.14-1.64-.8-1.9-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.16.19-.33.21-.61.07-.28-.14-1.2-.44-2.29-1.4-.85-.75-1.42-1.67-1.59-1.95-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.19-.28.28-.47.09-.19.05-.36-.02-.5-.07-.14-.64-1.54-.88-2.1-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.28-1 1-.99 2.43 0 1.43 1.02 2.8 1.16 3 .14.19 2 3.06 4.84 4.29.68.29 1.21.47 1.63.6.69.22 1.32.19 1.82.12.56-.08 1.64-.67 1.87-1.32.23-.65.23-1.2.16-1.32-.07-.12-.26-.19-.54-.33Z" /></svg></a></div>;
+}
+
+export default function App() {
+  const [screen, setScreen] = useState("home");
+  const [selected, setSelected] = useState(products[0]);
+  const [cart, setCart] = useState([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(null);
+  const [contractorStatus, setContractorStatus] = useState("none");
+  const [favorites, setFavorites] = useState([]);
+  const [showLoginFavoriteModal, setShowLoginFavoriteModal] = useState(false);
+  const [useStoreCredit, setUseStoreCredit] = useState(false);
+  const [, setHistory] = useState([]);
+
+  const referredSales = 5840;
+  const storeCredit = getStoreScoreEarnings(referredSales);
+
+  const { goToScreen, goBack } = createNavigation(screen, setScreen, setHistory);
+
+  const addToCart = (product, qty = 1) =>
+    setCart((items) => {
+      const exists = items.find((item) => item.id === product.id);
+      if (exists)
+        return items.map((item) =>
+          item.id === product.id ? { ...item, qty: item.qty + qty } : item
+        );
+      return [...items, { ...product, qty }];
+    });
+
+  const login = (type = "consumer", nextScreen = "checkout", status = "approved") => {
+    setIsLoggedIn(true);
+    setUserType(type);
+    setContractorStatus(type === "contractor" ? status : "none");
+    setScreen(nextScreen);
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUserType(null);
+    setContractorStatus("none");
+    setUseStoreCredit(false);
+    if (screen === "checkout") setScreen("cart");
+  };
+
+  const isFavorite = (productId) =>
+    favorites.some((item) => item.id === productId);
+
+  const toggleFavorite = (product) => {
+    if (!isLoggedIn) {
+      setShowLoginFavoriteModal(true);
+      return;
+    }
+    setFavorites((items) =>
+      items.some((item) => item.id === product.id)
+        ? items.filter((item) => item.id !== product.id)
+        : [...items, product]
+    );
+  };
+
+  const shareCoupon = () => {
+    const text = "Use my Jawbone contractor coupon: CONTRACTOR-OREN";
+    if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(text);
+    window.alert("Coupon copied: CONTRACTOR-OREN");
+  };
+
+  const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+
+  // 🔥 IMPORTANT: Separate ADMIN from WEB APP
+  if (screen === "admin") {
+    return (
+      <div className="min-h-screen bg-white font-sans">
+        <AdminPanel />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white font-sans">
+      <PreviewToolbar
+        screen={screen}
+        setScreen={setScreen}
+        login={login}
+        logout={logout}
+        isLoggedIn={isLoggedIn}
+        userType={userType}
+      />
+
+      <Header
+        screen={screen}
+        setScreen={setScreen}
+        cartCount={cartCount}
+        favoritesCount={favorites.length}
+        isLoggedIn={isLoggedIn}
+        userType={userType}
+        logout={logout}
+      />
+
+      {screen === "home" && <Home setScreen={setScreen} />}
+      {screen === "shop" && (
+        <Shop
+          setSelected={setSelected}
+          addToCart={addToCart}
+          toggleFavorite={toggleFavorite}
+          isFavorite={isFavorite}
+          goToScreen={goToScreen}
+        />
+      )}
+      {screen === "product" && (
+        <ProductPage
+          product={selected}
+          addToCart={addToCart}
+          goBack={goBack}
+          toggleFavorite={toggleFavorite}
+          isFavorite={isFavorite}
+        />
+      )}
+      {screen === "cart" && (
+        <CartPage
+          cart={cart}
+          setCart={setCart}
+          setScreen={setScreen}
+          couponCode={couponCode}
+          setCouponCode={setCouponCode}
+          isLoggedIn={isLoggedIn}
+          userType={userType}
+          storeCredit={storeCredit}
+          useStoreCredit={useStoreCredit}
+        />
+      )}
+      {screen === "favorites" && (
+        <FavoritesPage
+          favorites={favorites}
+          setScreen={setScreen}
+          setSelected={setSelected}
+          addToCart={addToCart}
+          toggleFavorite={toggleFavorite}
+          goToScreen={goToScreen}
+        />
+      )}
+      {screen === "checkout" && (
+        <CheckoutPage
+          cart={cart}
+          couponCode={couponCode}
+          setCouponCode={setCouponCode}
+          isLoggedIn={isLoggedIn}
+          setScreen={setScreen}
+          userType={userType}
+          storeCredit={storeCredit}
+          useStoreCredit={useStoreCredit}
+          setUseStoreCredit={setUseStoreCredit}
+        />
+      )}
+      {screen === "account" && (
+        <AccountPage
+          onLogin={login}
+          isLoggedIn={isLoggedIn}
+          userType={userType}
+          logout={logout}
+          setScreen={setScreen}
+          storeCredit={storeCredit}
+          referredSales={referredSales}
+          shareCoupon={shareCoupon}
+          favorites={favorites}
+          setSelected={setSelected}
+          addToCart={addToCart}
+          toggleFavorite={toggleFavorite}
+          isFavorite={isFavorite}
+          goToScreen={goToScreen}
+        />
+      )}
+      {screen === "orders" && <OrdersPage setScreen={setScreen} />}
+      {screen === "contractor" && (
+        <ContractorPage
+          isLoggedIn={isLoggedIn}
+          userType={userType}
+          contractorStatus={contractorStatus}
+          setScreen={setScreen}
+          storeCredit={storeCredit}
+          referredSales={referredSales}
+          shareCoupon={shareCoupon}
+        />
+      )}
+      {screen === "contact" && <FAQContactPage />}
+      {screen === "privacy" && (
+        <LegalPage type="privacy" setScreen={setScreen} />
+      )}
+      {screen === "terms" && (
+        <LegalPage type="terms" setScreen={setScreen} />
+      )}
+
+      {showLoginFavoriteModal && (
+        <LoginRequiredModal
+          onClose={() => setShowLoginFavoriteModal(false)}
+          onLogin={() => {
+            setShowLoginFavoriteModal(false);
+            setScreen("account");
+          }}
+        />
+      )}
+
+      <Footer setScreen={setScreen} />
+      <WhatsAppButton />
+    </div>
+  );
+}
